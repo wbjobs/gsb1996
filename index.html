@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>取色与对比度工具 · Canvas + EyeDropper + Web Worker</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>取色 · 对比度 · 导出</h1>
+    <p class="subtitle">Canvas 放大镜取色 ｜ EyeDropper 屏幕取色 ｜ WCAG 对比度 ｜ Web Worker 调色板分析</p>
+  </header>
+
+  <main class="layout">
+    <!-- 左侧：画布与取色 -->
+    <section class="panel canvas-panel" aria-label="取色工作区">
+      <div class="toolbar">
+        <label class="btn primary">
+          打开图片
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/x-icon" hidden />
+        </label>
+        <button class="btn" id="eyedropperBtn" type="button" disabled>屏幕取色 (EyeDropper)</button>
+        <button class="btn ghost" id="analyzeBtn" type="button" disabled>重新分析</button>
+        <span class="status" id="workerStatus" role="status"></span>
+      </div>
+
+      <div id="dropZone" class="drop-zone" tabindex="0" aria-label="拖放图片到此处，或点击选择文件">
+        <canvas id="canvas" hidden></canvas>
+        <div id="dropHint" class="drop-hint">
+          <p>拖放图片到这里</p>
+          <p class="muted">或点击「打开图片」· 支持 PNG / JPG / WebP / GIF / BMP</p>
+        </div>
+        <canvas id="loupe" class="loupe" width="120" height="120" hidden></canvas>
+      </div>
+
+      <div class="pixel-info muted" id="pixelInfo">在图片上移动可放大镜取色，点击将颜色加入列表</div>
+    </section>
+
+    <!-- 右侧：颜色、对比度与导出 -->
+    <section class="panel side-panel" aria-label="颜色与对比度">
+      <div class="picked-current">
+        <div class="swatch-lg" id="currentSwatch" title="当前颜色"></div>
+        <div class="picked-meta">
+          <strong id="currentHex">—</strong>
+          <span class="muted" id="currentRgb">未取色</span>
+          <span class="muted" id="currentPos"></span>
+        </div>
+        <button class="btn" id="addCurrentBtn" type="button" disabled>加入列表</button>
+      </div>
+
+      <div class="contrast-box">
+        <h2>对比度检查</h2>
+        <div class="contrast-row">
+          <label>前景
+            <input type="color" id="fgColor" value="#333333" />
+            <input type="text" id="fgText" class="text-input" value="#333333" spellcheck="false" />
+          </label>
+          <button class="icon-btn" id="swapBtn" type="button" title="交换前景/背景" aria-label="交换前景和背景">⇄</button>
+          <label>背景
+            <input type="color" id="bgColor" value="#ffffff" />
+            <input type="text" id="bgText" class="text-input" value="#ffffff" spellcheck="false" />
+          </label>
+        </div>
+        <div class="preview" id="contrastPreview">预览文本 The quick brown fox 跳过懒狗 0123456789</div>
+        <div class="ratio-display">
+          <span class="ratio-number" id="ratioNumber">—</span>
+          <div class="badges">
+            <span class="badge" id="badgeAaNormal">AA 正文</span>
+            <span class="badge" id="badgeAaLarge">AA 大字</span>
+            <span class="badge" id="badgeAaaNormal">AAA 正文</span>
+            <span class="badge" id="badgeAaaLarge">AAA 大字</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="palette-box">
+        <div class="palette-head">
+          <h2>颜色列表 <span class="muted" id="listCount"></span></h2>
+          <div class="palette-actions">
+            <select id="exportFormat" class="select-input" aria-label="导出格式">
+              <option value="json">JSON</option>
+              <option value="css">CSS 变量</option>
+              <option value="csv">CSV</option>
+            </select>
+            <button class="btn" id="exportBtn" type="button" disabled>导出文件</button>
+            <button class="btn" id="exportImageBtn" type="button" disabled>导出标注图 PNG</button>
+            <button class="btn ghost" id="clearBtn" type="button" disabled>清空</button>
+          </div>
+        </div>
+        <ul class="color-list" id="colorList"></ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="js/color-utils.js"></script>
+  <script src="js/quantize.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

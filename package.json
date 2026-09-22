@@ -1,0 +1,10 @@
+{
+  "name": "color-picker-contrast",
+  "version": "1.0.0",
+  "description": "取色 / WCAG 对比度 / 导出工具：Canvas + EyeDropper API + Web Worker",
+  "private": true,
+  "scripts": {
+    "test": "node tests/color-utils.test.js && node tests/quantize.test.js && node tests/worker.test.js && node tests/app.smoke.test.js",
+    "start": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');const port=8123;const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'};http.createServer((req,res)=>{let p=path.join(process.cwd(),decodeURIComponent(req.url.split('?')[0]));if(p.endsWith(path.sep))p+='index.html';fs.readFile(p,(e,d)=>{if(e){res.writeHead(404);res.end('404');return;}res.writeHead(200,{'Content-Type':mime[path.extname(p)]||'application/octet-stream'});res.end(d);});}).listen(port,()=>console.log('http://localhost:'+port));\""
+  }
+}
