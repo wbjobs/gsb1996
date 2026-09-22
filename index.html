@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>取色器 · 对比度与导出工具</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>取色器</h1>
+    <div class="status">
+      <span id="eyedropper-support" class="badge badge-muted">检测取色能力中…</span>
+      <span id="worker-status" class="badge badge-muted">Worker 检测中…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 左列：取色 -->
+    <section class="panel panel-picker">
+      <h2>取色</h2>
+
+      <div class="btn-row">
+        <button id="btn-screen-pick" class="btn btn-primary" type="button">
+          屏幕取色 (EyeDropper)
+        </button>
+        <label class="btn">
+          打开图片
+          <input id="file-input" type="file" accept="image/*" hidden />
+        </label>
+      </div>
+      <p class="hint">也可拖拽图片到画布，或 Ctrl/⌘+V 粘贴剪贴板图片。不支持 EyeDropper 时可用浏览器原生色块 <input id="native-color" type="color" value="#3b82f6" aria-label="原生取色" /> 兜底。</p>
+
+      <div id="drop-zone" class="canvas-wrap">
+        <canvas id="image-canvas" width="640" height="360"></canvas>
+        <canvas id="loupe" width="110" height="110" class="loupe" hidden></canvas>
+        <div id="canvas-empty" class="canvas-empty">尚未载入图片<br /><small>点击「打开图片」/ 拖拽 / 粘贴</small></div>
+      </div>
+
+      <div class="current-color">
+        <span id="current-swatch" class="swatch-lg"></span>
+        <div class="current-meta">
+          <div class="hex-line">
+            <label>HEX</label>
+            <input id="current-hex" type="text" value="#3b82f6" spellcheck="false" />
+            <button id="btn-copy-hex" class="btn btn-small" type="button">复制</button>
+          </div>
+          <div id="current-rgb" class="rgb-line">rgb(59, 130, 246)</div>
+          <div id="sample-coord" class="coord-line"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-add-current" class="btn" type="button">加入色板</button>
+        <button id="btn-extract" class="btn" type="button" disabled>提取图片主色</button>
+        <span id="extract-meta" class="hint inline"></span>
+      </div>
+    </section>
+
+    <!-- 中列：对比度 -->
+    <section class="panel panel-contrast">
+      <h2>对比度 (WCAG 2.1)</h2>
+
+      <div class="contrast-preview" id="contrast-preview">
+        <span id="preview-large">大号文字 Aa</span>
+        <span id="preview-body">正文文本 The quick brown fox 123</span>
+      </div>
+
+      <div class="pair-row">
+        <label class="pair">
+          <span class="pair-label">前景（文字）</span>
+          <input id="fg-color" type="color" value="#1f2937" />
+          <code id="fg-hex">#1F2937</code>
+        </label>
+        <button id="btn-swap" class="btn btn-small" type="button" title="交换前景与背景">⇄</button>
+        <label class="pair">
+          <span class="pair-label">背景</span>
+          <input id="bg-color" type="color" value="#ffffff" />
+          <code id="bg-hex">#FFFFFF</code>
+        </label>
+      </div>
+
+      <div class="ratio-display">
+        <span id="ratio-number" class="ratio">—</span>
+        <span id="ratio-grade" class="grade">—</span>
+      </div>
+
+      <ul class="grade-list">
+        <li><span class="dot" id="g-aa-normal"></span>普通文字 AA ≥ 4.5</li>
+        <li><span class="dot" id="g-aaa-normal"></span>普通文字 AAA ≥ 7</li>
+        <li><span class="dot" id="g-aa-large"></span>大号文字 AA ≥ 3</li>
+        <li><span class="dot" id="g-aaa-large"></span>大号文字 AAA ≥ 4.5</li>
+      </ul>
+      <p class="hint">提示：点击色板中颜色可设为前景，Shift+点击设为背景。</p>
+    </section>
+
+    <!-- 右列：色板与导出 -->
+    <section class="panel panel-palette">
+      <h2>色板与导出</h2>
+
+      <div class="palette-head">
+        <span id="palette-count" class="hint inline">0 色</span>
+        <div>
+          <button id="btn-clear" class="btn btn-small" type="button">清空</button>
+        </div>
+      </div>
+      <ul id="palette-list" class="palette-list"></ul>
+      <p id="palette-empty" class="hint">色板为空，先取色并「加入色板」或提取主色。</p>
+
+      <h3>导出</h3>
+      <div class="btn-row export-row">
+        <button id="btn-export-json" class="btn" type="button">JSON</button>
+        <button id="btn-export-css" class="btn" type="button">CSS 变量</button>
+        <button id="btn-export-png" class="btn" type="button">PNG 色卡</button>
+        <button id="btn-copy-json" class="btn btn-small" type="button">复制 JSON</button>
+        <button id="btn-copy-css" class="btn btn-small" type="button">复制 CSS</button>
+      </div>
+
+      <h3>性能</h3>
+      <div id="perf-stats" class="perf">
+        <div>Worker：<code id="perf-worker">—</code></div>
+        <div>最近一次计算：<code id="perf-task">—</code></div>
+        <div>耗时：<code id="perf-time">—</code></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>
